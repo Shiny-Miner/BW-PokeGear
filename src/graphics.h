@@ -5,15 +5,8 @@
 enum GfxTags
 {
   GFXTAG_PANEL,
-  GFXTAG_EXIT,
-  GFXTAG_POKEDEX,
-  GFXTAG_POKEMON,
-  GFXTAG_BAG,
-  GFXTAG_PLAYER,
-  GFXTAG_SAVE,
-  GFXTAG_OPTIONS,
+  GFXTAG_MAPCARD,
   GFXTAG_SCROLLBAR,
-  GFXTAG_RETIRE
 };
 
 
@@ -22,38 +15,14 @@ enum GfxTags
 extern const u8 panelTiles[]; 
 extern const u16 panelPal[];  
 
-// Exit Button Gfx Data
-extern const u8 exitTiles[];
-extern const u16 exitPal[];
-
 // BG Gfx data
 extern const u8 StartMenuBgTiles[]; 
 extern const u8 StartMenuBgMap[];
 extern const u16 StartMenuBgPal[];
 
-// Pokedex Icon Gfx Data
-extern const u8 pokedexTiles[];
-extern const u16 pokedexPal[];
-
-// Pokemon Icon Gfx Data
-extern const u8 pokemonTiles[];
-extern const u16 pokemonPal[];
-
-// Bag Icon Gfx data 
-extern const u8 bagTiles[];
-extern const u16 bagPal[];
-
-// Trainer Card Icon Gfx data
-extern const u8 playerTiles[];
-extern const u16 playerPal[];
-
-// Save Icon Gfx Data
-extern const u8 saveTiles[];
-extern const u16 savePal[];
-
 // Options Icon Gfx data
-extern const u8 optionsTiles[];
-extern const u16 optionsPal[];
+extern const u8 TownMapTiles[];
+extern const u16 TownMapPal[];
 
 // Scrollbar Gfx data
 extern const u8 scrollbarTiles[];
@@ -133,47 +102,6 @@ static const struct SpriteTemplate sPanel2SpriteTemplate =
 	.paletteTag = GFXTAG_PANEL,
 	.oam = &sPanelOam,
 	.anims = sAnimCmdTable_Panel2,
-	.images = NULL,
-	.affineAnims = gDummySpriteAffineAnimTable,
-	.callback = PanelCallBack,
-}; 
-
-
-// Exit Sprite
-static const struct SpriteSheet ExitSpriteSheet = {exitTiles, 16*16, GFXTAG_EXIT };
-static const struct SpritePalette ExitSpritePalette = {exitPal, GFXTAG_EXIT};
-static const struct OamData sExitIconOam =
-{
-	.affineMode = ST_OAM_AFFINE_OFF,
-	.objMode = ST_OAM_OBJ_NORMAL,
-	.shape = SPRITE_SHAPE(16x16),
-	.size = SPRITE_SIZE(16x16),
-	.priority = 1, //Above other sprites
-};
-
-static const union AnimCmd sAnimCmdExit[] =
-{
-	ANIMCMD_FRAME(0, 0),
-	ANIMCMD_END
-};
-static const union AnimCmd sAnimCmdExitSelected[] =
-{
-	ANIMCMD_FRAME(4, 0),
-	ANIMCMD_END
-}; 
-static const union AnimCmd *const sAnimCmdTable_Exit[] =
-{
-	sAnimCmdExit,
-	sAnimCmdExitSelected
-};   
-
-
-static const struct SpriteTemplate ExitSpriteTemplate =
-{
-	.tileTag = GFXTAG_EXIT,
-	.paletteTag = GFXTAG_EXIT,
-	.oam = &sExitIconOam,
-	.anims = sAnimCmdTable_Exit,
 	.images = NULL,
 	.affineAnims = gDummySpriteAffineAnimTable,
 	.callback = PanelCallBack,

@@ -1,20 +1,5 @@
-#org @gText_StartMenu_Pokedex
-POK[06]DEX
-
-#org @gText_StartMenu_Pokemon
-POK[06]MON
-
-#org @gText_StartMenu_Bag 
-BAG
-
-#org @gText_StartMenu_Save
-SAVE
-
-#org @gText_StartMenu_Option
-OPTIONS
-
-#org @gText_StartMenu_Retire
-RETIRE
+#org @gText_StartMenu_MapCard
+Map Card
 
 #org @gText_Mon
 MON.
@@ -45,6 +30,3 @@ PM
 
 #org @gText_StartMenu_TimeBase_12Hr
 [BUFFER3] [BUFFER1]:[BUFFER2] 
-
-#org @gText_SafariZoneStats
-BALLS: [BUFFER1]   [BUFFER2]/600

@@ -15,17 +15,8 @@
 #define icon_template(gfxtag) {.tileTag = (u16) gfxtag, .paletteTag = (u16) gfxtag, .oam = &sIconOamData, .anims = sAnimCmdTable_Icon, .images = NULL,.affineAnims = gDummySpriteAffineAnimTable, .callback = StartMenuIconCallback}
 
 extern u8* GetMapName(u8* dest, u16 regionMapId, u16 padLength);
-extern u8  GetCurrentRegionMapSectionId(void);
-extern void CB2_OpenPokedexFromStartMenu(void);
-extern void CB2_PartyMenuFromStartMenu(void);
-extern void CB2_BagMenuFromStartMenu(void); 
-extern void CB2_OptionsMenuFromStartMenu(void);   
+extern u8  GetCurrentRegionMapSectionId(void); 
 void CB2_ReturnToField(void);
-extern bool8  StartMenuPokedexCallback(void);
-extern bool8  StartMenuPokemonCallback(void);
-extern bool8  StartMenuBagCallback(void);
-extern bool8  StartMenuPlayerCallback(void);
-extern bool8  StartMenuOptionCallback(void);
 void FieldCB_WarpExitFadeFromBlack(void);
 
 
@@ -39,14 +30,7 @@ enum BGs
 
 enum StartMenuOptions
 {
-  STARTMENU_POKEDEX = 0,
-  STARTMENU_POKEMON,
-  STARTMENU_BAG,
-  STARTMENU_PLAYER, 
-  STARTMENU_SAVE,
-  STARTMENU_OPTION,
-  STARTMENU_RETIRE,
-  MAX_STARTMENU_ITEMS
+  STARTMENU_MAPCARD = 0,
 };
 
 struct StartMenuIcon
@@ -67,16 +51,7 @@ struct StartMenuOption
 
 
 // Text
-extern const u8 gText_StartMenu_Pokedex[];
-extern const u8 gText_StartMenu_Pokemon[];
-extern const u8 gText_StartMenu_Bag[];
-extern const u8 gText_StartMenu_Player[];
-extern const u8 gText_StartMenu_Save[];
-extern const u8 gText_StartMenu_Option[]; 
-extern const u8 gText_StartMenu_Retire[]; 
-
-// Safari Zone Stats text
-extern const u8 gText_SafariZoneStats[];
+extern const u8 gText_StartMenu_MapCard[];
 
 //Time strings
 extern const u8 gText_Sun[];
@@ -88,11 +63,6 @@ extern const u8 gText_Fri[];
 extern const u8 gText_Sat[]; 
 extern const u8 gText_AM[]; 
 extern const u8 gText_PM[]; 
-
-// Scripts 
-extern u8 Script_SaveGame[];
-extern u8 Script_Retire[];
-
 static const struct BgTemplate sStartMenuBgTemplates[] =
 {
 	[BG_TEXT] =
@@ -140,57 +110,12 @@ static const struct BgTemplate sStartMenuBgTemplates[] =
 
 static struct StartMenuIcon StartMenuIconTable[] = 
 {
-  [STARTMENU_POKEDEX] = 
+  [STARTMENU_MAPCARD] = 
   {
-    .spritesheet = {pokedexTiles, 32*32, GFXTAG_POKEDEX},
-    .spritepalette =  {pokedexPal, GFXTAG_POKEDEX},
-    .sprtemplate = icon_template(GFXTAG_POKEDEX)
+    .spritesheet = {TownMapTiles, 32*32, GFXTAG_MAPCARD},
+    .spritepalette =  {TownMapPal, GFXTAG_MAPCARD},
+    .sprtemplate = icon_template(GFXTAG_MAPCARD)
   },
-  [STARTMENU_POKEMON] = 
-  {
-    .spritesheet = {pokemonTiles, 32*32, GFXTAG_POKEMON},
-    .spritepalette = {pokemonPal, GFXTAG_POKEMON},
-    .sprtemplate = icon_template(GFXTAG_POKEMON)
-  },
-  [STARTMENU_BAG] =
-  {
-    .spritesheet = {bagTiles, 32*32, GFXTAG_BAG},
-    .spritepalette = {bagPal, GFXTAG_BAG},
-    .sprtemplate = icon_template(GFXTAG_BAG)
-  },
-  [STARTMENU_PLAYER] =
-  {
-    .spritesheet = {playerTiles, 32*32, GFXTAG_PLAYER},
-    .spritepalette = {playerPal, GFXTAG_PLAYER},
-    .sprtemplate = icon_template(GFXTAG_PLAYER)
-  },
-  [STARTMENU_SAVE] =
-  {
-    .spritesheet = {saveTiles, 32*32, GFXTAG_SAVE},
-    .spritepalette = {savePal, GFXTAG_SAVE},
-    .sprtemplate = icon_template(GFXTAG_SAVE)
-  },
-  [STARTMENU_OPTION] =
-  {
-    .spritesheet = {optionsTiles, 32*32, GFXTAG_OPTIONS},
-    .spritepalette = {optionsPal, GFXTAG_OPTIONS},
-    .sprtemplate = icon_template(GFXTAG_OPTIONS)
-  },
-  [STARTMENU_RETIRE] =
-  {
-    .spritesheet = {exitTiles, 16*16 , GFXTAG_RETIRE},
-    .spritepalette = {exitPal, GFXTAG_RETIRE},
-    .sprtemplate =
-     {
-        .tileTag = GFXTAG_RETIRE,
-        .paletteTag = GFXTAG_RETIRE,
-        .oam = &sExitIconOam,
-        .anims = sAnimCmdTable_Exit,
-        .images = NULL,
-        .affineAnims = gDummySpriteAffineAnimTable,
-        .callback = PanelCallBack,  
-     },
-  }
 };
 
 // Text fonts

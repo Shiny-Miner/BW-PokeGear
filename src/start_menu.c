@@ -32,16 +32,16 @@
 #include "../include/gba/types.h"
 #include "../include/new/Vanilla_functions.h"
 
-
+#define MAX_STARTMENU_ITEMS 1
 #define cpos sStartMenuPtr->cursorpos[0]
 #define scrolloffset sStartMenuPtr->cursorpos[1]
 #define numitems sStartMenuPtr->NumStartMenuItems[0]
 #define numonscreenitems sStartMenuPtr->NumStartMenuItems[1]
 #define menuitems sStartMenuPtr->CurrentOptionsTable[0] 
 #define onscreenmenuitems sStartMenuPtr->CurrentOptionsTable[1]
+extern void QuestLog_CutRecording(void);
+extern void InitRegionMapWithExitCB(u8 type, void (*callback)(void));
 
-extern u8 gNumSafariBalls;
-extern u16 gSafariZoneStepCounter;
 
 enum WindowIds
 {
@@ -51,9 +51,6 @@ enum WindowIds
     WIN_BOTTOMBAR,
     WIN_COUNT
 };   
-
-
-
 
 
 struct StartMenuResources
@@ -113,12 +110,10 @@ static const struct WindowTemplate sMenuWindowTemplates[] =
     DUMMY_WIN_TEMPLATE,
 }; 
 
-
+#define FLAG_MAP_CARD 0x200
 
 //This file's functions
 void CB2_ReturnToFieldWithOpenMenu(void); 
-static void CB2_OptionMenuFromStartMenu(void); 
-static void CB2_PlayerTrainerCardFromStartMenu(void);
 static void ClearTasksAndGraphicalStructs(void); 
 static void ClearVramOamPlttRegs(void);
 static void VBlankCB_StartMenu(void); 
@@ -139,67 +134,36 @@ static void CleanWindows(void);
 static void CommitWindows(void); 
 static void PrintGUIMenuItemsName(void);
 static void DrawIcons(void);
-void CB2_SaveFromStartMenu(void);
 void StartMenu_Init(void); 
 static void CreateScrollbar(void) ;
 static void CalculateAndConfigureOnScreenOptions(void);
 static void Task_RunStartMenuOptionFuncOrScript(u8 taskId);
 static void RefreshStartMenuOptions(void);
 static void PrintAndUpdateTimeText();
-static void SetupSafariZoneStatsText(void) ;
+static void ShowTownMap(void);
 
 static const struct StartMenuOption sStartMenuOptionsTable[] = 
 {
   {
-    .id =  STARTMENU_POKEDEX,
-    .text = (u8*) gText_StartMenu_Pokedex,
-    .flag = FLAG_SYS_POKEDEX_GET,
+    .id =  STARTMENU_MAPCARD,
+    .text = (u8*) gText_StartMenu_MapCard,
+    .flag = 0,
     .script = NULL,
-    .func = CB2_OpenPokedexFromStartMenu
-  },
-  {
-    .id =  STARTMENU_POKEMON,
-    .text =  (u8*) gText_StartMenu_Pokemon,
-    .flag =  FLAG_SYS_POKEMON_GET,
-    .script =  NULL,
-    .func = CB2_PartyMenuFromStartMenu
-  },
-  {
-    .id =  STARTMENU_BAG,
-    .text =  (u8*) gText_StartMenu_Bag,
-    .flag = 0, 
-    .script =  NULL,
-    .func = CB2_BagMenuFromStartMenu
-  },
-  {
-    .id =  STARTMENU_PLAYER, 
-    .text = NULL,     // [PLAYER] doesn't work for reason 
-    .flag =  0, 
-    .script = NULL,
-    .func = CB2_PlayerTrainerCardFromStartMenu
-  },
-  {
-    .id =  STARTMENU_SAVE, 
-    .text =  (u8*) gText_StartMenu_Save,
-    .flag =  0, 
-    .script = Script_SaveGame,
-    .func = NULL
-  },
-  {
-    .id =  STARTMENU_OPTION, 
-    .text = (u8*) gText_StartMenu_Option,
-    .flag = 0, 
-    .script = NULL,
-    .func = CB2_OptionMenuFromStartMenu
-  },
-  {
-    .id =  STARTMENU_RETIRE, 
-    .text = (u8*) gText_StartMenu_Retire,
-    .flag = FLAG_SYS_SAFARI_MODE, 
-    .script = Script_Retire,
-    .func = NULL
+    .func = ShowTownMap
   },
  }; 
+
+ enum {
+  REGIONMAP_TYPE_NORMAL,
+  REGIONMAP_TYPE_WALL,
+  REGIONMAP_TYPE_FLY,
+  REGIONMAP_TYPE_COUNT
+};
+
+ static void ShowTownMap(void) {
+  QuestLog_CutRecording();
+  InitRegionMapWithExitCB(1, CB2_ReturnToFieldWithOpenMenu);
+}
 
 static void ClearTasksAndGraphicalStructs(void)
 {
@@ -339,7 +303,6 @@ static bool8 InitStartMenuGUI(void)
   DrawIcons();
   PrintGUIMapName(); 
   PrintGUIMenuItemsName();
-  if (FlagGet(FLAG_SYS_SAFARI_MODE)) SetupSafariZoneStatsText();
   PrintAndUpdateTimeText();
   CreateScrollbar();
   CommitWindows();
@@ -452,7 +415,6 @@ static void SetUpStartMenu_NormalField(void)
   { 
     if (sStartMenuOptionsTable[i].flag!=0 && !FlagGet(sStartMenuOptionsTable[i].flag)) 
       continue;
-    if (FlagGet(FLAG_SYS_SAFARI_MODE) && i == STARTMENU_SAVE) continue;
     menuitems[cursor] = sStartMenuOptionsTable[i].id;
     cursor++;
   } 
@@ -517,10 +479,6 @@ static void DrawPanels(void)
       counter++; 
     }
   }
-  LoadSpritePalette(&ExitSpritePalette);
-  LoadSpriteSheet(&ExitSpriteSheet);
-  u8 SpriteId = CreateSprite(&ExitSpriteTemplate, 240-16, 160-11, 0);
-  gSprites[SpriteId].data[0] = 0xFF;
 } 
 
 
@@ -622,9 +580,6 @@ static void PrintGUIMenuItemsName(void)
         break; 
       x = (PANEL_X + (HSPACING + 64/2 + 64)*column) + 8;
       y = (PANEL_Y + (VSPACING + 32)*row) - 40;
-      if (onscreenmenuitems[counter]==STARTMENU_PLAYER)
-        WindowPrint(WIN_ITEMS, 1, x, y, &sWhiteText, 0, gSaveBlock2Ptr->playerName); 
-      else
         WindowPrint(WIN_ITEMS, 1, x, y, &sWhiteText, 0, sStartMenuOptionsTable[onscreenmenuitems[counter]].text); 
       counter++;
     }
@@ -651,17 +606,6 @@ static void CalculateAndConfigureOnScreenOptions(void)
     counter++;
   } 
   numonscreenitems = counter;
-}
-
-static void CB2_PlayerTrainerCardFromStartMenu(void)
-{
-  ShowPlayerTrainerCard(CB2_ReturnToFieldWithOpenMenu);
-}
-
-static void CB2_OptionMenuFromStartMenu(void)
-{
-  SetMainCallback2(CB2_OptionsMenuFromStartMenu); 
-  gMain.savedCallback = CB2_ReturnToFieldWithOpenMenu;
 }
 
 
@@ -721,13 +665,4 @@ static void PrintAndUpdateTimeText()
 //	AddTextPrinterParameterized(sTimeWindowId, 2, gStringVar4, 4, 3, 0xFF, NULL);
   WindowPrint(WIN_TOPBAR_TIME, 0, 3, 0, &sWhiteText, 0 ,gStringVar4);
   WindowPrint(WIN_TOPBAR_TIME, 0, 63, 0, &sWhiteText, 0 ,amPMString);
-}
-
-
-static void SetupSafariZoneStatsText(void) 
-{
-  ConvertIntToDecimalStringN(gStringVar1, gNumSafariBalls, STR_CONV_MODE_RIGHT_ALIGN, 2);
-  ConvertIntToDecimalStringN(gStringVar2, gSafariZoneStepCounter , STR_CONV_MODE_RIGHT_ALIGN, 3);
-  StringExpandPlaceholders(gStringVar4, gText_SafariZoneStats);
-  WindowPrint(WIN_TOPBAR, 0, 60, 0, &sWhiteText, 0, gStringVar4);
 }
