@@ -70,7 +70,7 @@ static const struct WindowTemplate sMenuWindowTemplates[] =
     [WIN_TOPBAR_TIME] = 
     {
         .bg = BG_TEXT,      // which bg to print text on
-        .tilemapLeft = 0,   // position from left (per 8 pixels)
+        .tilemapLeft = 18,   // position from left (per 8 pixels)
         .tilemapTop = 0,    // position from top (per 8 pixels)
         .width = 10,        // width (per 8 pixels)
         .height = 4,        // height (per 8 pixels)

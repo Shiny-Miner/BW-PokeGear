@@ -1,13 +1,10 @@
 # 👀 What is this? 
-A custom start menu for Fire Red. <br>
-Normal: <br> 
-![](preview.png) <br>
-Safari Zone: <br> 
-![](preview_safari_zone.png) <br>
-## ✨ Features
-- BW styled UI
-- Configurable to add more than 6 default options.
+Sir Shiny is now working on his own PokeGear as he had said, want to see? ah jalte raho.
 
+![](test-1-1.png)
+
+For now its hooked to be opened in start menu for easy tests.
+Credits : Ansh, Blackfragnant (for background)
 # ❓ How to use?
 Same as CFRU, `python 3.6+` and `devkitARM` are required to compile.<br>
 
