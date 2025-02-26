@@ -32,7 +32,7 @@
 #include "../include/gba/types.h"
 #include "../include/new/Vanilla_functions.h"
 
-#define MAX_STARTMENU_ITEMS 1
+#define MAX_STARTMENU_ITEMS 2
 #define cpos sStartMenuPtr->cursorpos[0]
 #define scrolloffset sStartMenuPtr->cursorpos[1]
 #define numitems sStartMenuPtr->NumStartMenuItems[0]
@@ -111,6 +111,15 @@ static const struct WindowTemplate sMenuWindowTemplates[] =
 }; 
 
 #define FLAG_MAP_CARD 0x200
+#define FLAG_RECEIVED_CALL1 0x300
+#define FLAG_RECEIVED_CALL2 0x301
+#define FLAG_RECEIVED_CALL3 0x302
+#define FLAG_RECEIVED_CALL4 0x303
+#define FLAG_UNLOCK_NPC1 0x310
+#define FLAG_UNLOCK_NPC2 0x311
+#define FLAG_PHONE_CARD 0x320
+#define MESSAGE_NO_ANSWER 200
+
 
 //This file's functions
 void CB2_ReturnToFieldWithOpenMenu(void); 
@@ -141,6 +150,18 @@ static void Task_RunStartMenuOptionFuncOrScript(u8 taskId);
 static void RefreshStartMenuOptions(void);
 static void PrintAndUpdateTimeText();
 static void ShowTownMap(void);
+static void ShowPhoneCard(void);
+void InitPhoneCardUI(void);
+void PrintPhoneEntries(void);
+void ShowMessage(u16 messageId);
+
+
+static const struct PhoneEntry sPhoneCardTable[] =
+{
+    {0x3, 1, 100, 101, FLAG_RECEIVED_CALL1, FLAG_RECEIVED_CALL2, FLAG_UNLOCK_NPC1, gText_Oak},
+    {0x5, 2, 102, 103, FLAG_RECEIVED_CALL3, FLAG_RECEIVED_CALL4, FLAG_UNLOCK_NPC2, gText_May},
+};
+
 
 static const struct StartMenuOption sStartMenuOptionsTable[] = 
 {
@@ -151,6 +172,13 @@ static const struct StartMenuOption sStartMenuOptionsTable[] =
     .script = NULL,
     .func = ShowTownMap
   },
+  {
+    .id = STARTMENU_PHONECARD,
+    .text = (u8*) gText_StartMenu_PhoneCard,
+    .flag = 0,
+    .script = NULL,
+    .func = ShowPhoneCard
+  }
  }; 
 
  enum {
@@ -163,6 +191,49 @@ static const struct StartMenuOption sStartMenuOptionsTable[] =
  static void ShowTownMap(void) {
   QuestLog_CutRecording();
   InitRegionMapWithExitCB(1, CB2_ReturnToFieldWithOpenMenu);
+}
+
+static void ShowPhoneCard(void) {
+  QuestLog_CutRecording();
+  InitPhoneCardUI();
+}
+
+void InitPhoneCardUI(void) {
+    DrawPanels();    // Redraws the UI panels
+    DrawIcons();     // Redraws the icons
+    WindowPrint(WIN_ITEMS, 1, 10, 2, &sWhiteText, 0, gText_StartMenu_PhoneCard);
+    CommitWindows(); // Commits all window updates to the screen
+    PrintPhoneEntries(); // Ensures NPC list is displayed correctly
+}
+
+
+void PrintPhoneEntries(void) {
+  u8 x = 10, y = 20;
+  for (u8 i = 0; i < ARRAY_COUNT(sPhoneCardTable); i++) {
+      if (FlagGet(sPhoneCardTable[i].enableFlag)) {
+          WindowPrint(WIN_ITEMS, 1, x, y, &sWhiteText, 0, sPhoneCardTable[i].npcName);
+          y += 12;  // Move to next line
+      }
+  }
+  CommitWindow(WIN_ITEMS);
+}
+
+extern const u8 gText_ExpandedPlaceholder[];
+
+void ShowMessage(u16 messageId) {
+  StringExpandPlaceholders(gStringVar4, gText_ExpandedPlaceholder); // Prepare message
+  AddTextPrinterParameterized(0, 2, gStringVar4, 0, 0, 0, NULL);
+  CopyWindowToVram(0, COPYWIN_BOTH);
+}
+
+
+void CallNPC(u8 npcIndex) {
+  if (FlagGet(sPhoneCardTable[npcIndex].flagMessage1))
+      ShowMessage(sPhoneCardTable[npcIndex].message1);
+  else if (FlagGet(sPhoneCardTable[npcIndex].flagMessage2))
+      ShowMessage(sPhoneCardTable[npcIndex].message2);
+  else
+      ShowMessage(MESSAGE_NO_ANSWER);
 }
 
 static void ClearTasksAndGraphicalStructs(void)

@@ -31,6 +31,7 @@ enum BGs
 enum StartMenuOptions
 {
   STARTMENU_MAPCARD = 0,
+  STARTMENU_PHONECARD,
 };
 
 struct StartMenuIcon
@@ -49,9 +50,22 @@ struct StartMenuOption
   void (*func);
 };
 
+struct PhoneEntry {
+    u8 overworldTableBank;
+    u8 overworldTableNumber;
+    u16 message1;  // CFRU Message Index
+    u16 message2;  // CFRU Message Index
+    u16 flagMessage1;  // Flag required for message1
+    u16 flagMessage2;  // Flag required for message2
+    u16 enableFlag;  // Flag that enables this entry
+    const u8 *npcName;  // Pointer to NPC Name
+};
 
 // Text
 extern const u8 gText_StartMenu_MapCard[];
+extern const u8 gText_StartMenu_PhoneCard[];
+extern const u8 gText_Oak[];
+extern const u8 gText_May[];
 
 //Time strings
 extern const u8 gText_Sun[];
@@ -115,6 +129,12 @@ static struct StartMenuIcon StartMenuIconTable[] =
     .spritesheet = {TownMapTiles, 32*32, GFXTAG_MAPCARD},
     .spritepalette =  {TownMapPal, GFXTAG_MAPCARD},
     .sprtemplate = icon_template(GFXTAG_MAPCARD)
+  },
+  [STARTMENU_PHONECARD] = 
+  {
+    .spritesheet = {phonecardTiles, 32*32, GFXTAG_PHONECARD},
+    .spritepalette =  {phonecardPal, GFXTAG_PHONECARD},
+    .sprtemplate = icon_template(GFXTAG_PHONECARD)
   },
 };
 

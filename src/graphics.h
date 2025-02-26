@@ -6,6 +6,7 @@ enum GfxTags
 {
   GFXTAG_PANEL,
   GFXTAG_MAPCARD,
+  GFXTAG_PHONECARD,
   GFXTAG_SCROLLBAR,
 };
 
@@ -28,6 +29,9 @@ extern const u16 TownMapPal[];
 extern const u8 scrollbarTiles[];
 extern const u16 scrollbarPal[];
 
+// Phone card
+extern const u8 phonecardTiles[];
+extern const u16 phonecardPal[];
 
 
 
