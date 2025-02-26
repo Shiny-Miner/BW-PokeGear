@@ -33,6 +33,10 @@ extern const u16 scrollbarPal[];
 extern const u8 phonecardTiles[];
 extern const u16 phonecardPal[];
 
+// Phone card bg
+extern const u8 PhoneCardBgTiles[]; 
+extern const u16 PhoneCardBgPal[]; 
+extern const u8 PhoneCardBgMap[];
 
 
 //================================================================================================
