@@ -144,7 +144,7 @@ static void PrintAndUpdateTimeText();
 static void ShowTownMap(void);
 void InitPhoneCardUI(void);
 static void ShowPhoneCard(void);
-static void Task_PhoneCardFadeOut(u8 taskId);
+static void Task_PhoneCardFadeOutToStartMenu(u8 taskId);
 static void Task_PhoneCardWaitForKeyPress(u8 taskId);
 static void LoadPhoneCardBgGfx(void);
 
@@ -734,11 +734,11 @@ static void Task_PhoneCardWaitForKeyPress(u8 taskId)
     }
 }
 
-static void Task_PhoneCardFadeOut(u8 taskId)
+static void Task_PhoneCardFadeOutToStartMenu(u8 taskId)
 {
     if (!gPaletteFade.active)
     {
-        SetMainCallback2(ReturnToFieldFromStartMenu);
+        CB2_ReturnToFieldWithOpenMenu();
         FreeAndCloseStartMenu(taskId);
     }
 }
