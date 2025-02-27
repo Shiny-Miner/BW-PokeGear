@@ -143,6 +143,10 @@ static void RefreshStartMenuOptions(void);
 static void PrintAndUpdateTimeText();
 static void ShowTownMap(void);
 void InitPhoneCardUI(void);
+static void ShowPhoneCard(void);
+static void Task_PhoneCardFadeOut(u8 taskId);
+static void Task_PhoneCardWaitForKeyPress(u8 taskId);
+static void LoadPhoneCardBgGfx(void);
 
 static const struct StartMenuOption sStartMenuOptionsTable[] = 
 {
@@ -158,8 +162,8 @@ static const struct StartMenuOption sStartMenuOptionsTable[] =
     .text = (u8*) gText_StartMenu_PhoneCard,
     .flag = 0,
     .script = NULL,
-    .func = NULL
-  }
+    .func = ShowPhoneCard
+  },
  }; 
 
  enum {
@@ -675,3 +679,67 @@ static void PrintAndUpdateTimeText()
   WindowPrint(WIN_TOPBAR_TIME, 0, 3, 0, &sWhiteText, 0 ,gStringVar4);
   WindowPrint(WIN_TOPBAR_TIME, 0, 63, 0, &sWhiteText, 0 ,amPMString);
 }
+static void ShowPhoneCard(void)
+{
+    QuestLog_CutRecording();
+    InitPhoneCardUI();
+}
+
+void InitPhoneCardUI(void)
+{
+    SetVBlankCallback(NULL);
+    ClearVramOamPlttRegs();
+    SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_MODE_0 | DISPCNT_OBJ_1D_MAP | DISPCNT_BG_ALL_ON | DISPCNT_OBJ_ON);
+    
+    ClearTasksAndGraphicalStructs();
+    sStartMenuPtr->sBgTilemapBuffer = Malloc(0x1000);
+    ResetBgsAndClearDma3BusyFlags(0);
+    InitBgsFromTemplates(0, sStartMenuBgTemplates, NELEMS(sStartMenuBgTemplates));
+    SetBgTilemapBuffer(BG_BACKGROUND, sStartMenuPtr->sBgTilemapBuffer);
+    LoadPhoneCardBgGfx();
+    
+    ShowBg(BG_TEXT);
+    ShowBg(BG_BACKGROUND);
+    CopyBgTilemapBufferToVram(BG_BACKGROUND);
+    
+    InitWindows(sMenuWindowTemplates);
+    DeactivateAllTextPrinters();
+    
+    BeginNormalPaletteFade(0xFFFFFFFF, 0, 16, 0, RGB_BLACK);
+    SetVBlankCallback(VBlankCB_StartMenu);
+    CreateTask(Task_PhoneCardWaitForKeyPress, 0);
+    SetMainCallback2(MainCB2_StartMenu);
+}
+
+static void LoadPhoneCardBgGfx(void)
+{
+    const u8 *tiles, *map;
+    const u16 *palette;
+    tiles = PhoneCardBgTiles;
+    map = PhoneCardBgMap;
+    palette = PhoneCardBgPal;
+    
+    DecompressAndCopyTileDataToVram(BG_BACKGROUND, tiles, 0, 0, 0);
+    LZDecompressWram(map, sStartMenuPtr->sBgTilemapBuffer);
+    LoadPalette(palette, 0, 0x20);
+}
+
+static void Task_PhoneCardWaitForKeyPress(u8 taskId)
+{
+    if (JOY_NEW(B_BUTTON))
+    {
+        PlaySE(SE_PC_OFF);
+        BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 16, RGB_BLACK);
+        gTasks[taskId].func = Task_PhoneCardFadeOut;
+    }
+}
+
+static void Task_PhoneCardFadeOut(u8 taskId)
+{
+    if (!gPaletteFade.active)
+    {
+        SetMainCallback2(ReturnToFieldFromStartMenu);
+        FreeAndCloseStartMenu(taskId);
+    }
+}
+
