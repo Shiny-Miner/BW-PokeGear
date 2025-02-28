@@ -147,6 +147,7 @@ static void ShowPhoneCard(void);
 static void Task_PhoneCardFadeOutToStartMenu(u8 taskId);
 static void Task_PhoneCardWaitForKeyPress(u8 taskId);
 static void LoadPhoneCardBgGfx(void);
+static void DrawPhoneCardSprite(u16 x, u16 y);
 
 static const struct StartMenuOption sStartMenuOptionsTable[] = 
 {
@@ -704,7 +705,7 @@ void InitPhoneCardUI(void)
     
     InitWindows(sMenuWindowTemplates);
     DeactivateAllTextPrinters();
-    
+    DrawPhoneCardSprite(40, 50);
     BeginNormalPaletteFade(0xFFFFFFFF, 0, 16, 0, RGB_BLACK);
     SetVBlankCallback(VBlankCB_StartMenu);
     CreateTask(Task_PhoneCardWaitForKeyPress, 0);
@@ -742,4 +743,13 @@ static void Task_PhoneCardFadeOutToStartMenu(u8 taskId)
         FreeAndCloseStartMenu(taskId);
     }
 }
+extern const u8 Sprite1Tiles[];
+extern const u16 Sprite1Pal[];
 
+
+static void DrawPhoneCardSprite(u16 x, u16 y)
+{
+    LoadSpriteSheet(&(struct SpriteSheet){Sprite1Tiles, 32 * 32 / 2, 0});
+    LoadSpritePalette(&(struct SpritePalette){Sprite1Pal, 0});
+    CreateSprite(&Sprite1Template, x, y, 0);
+}

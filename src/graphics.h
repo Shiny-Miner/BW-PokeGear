@@ -47,6 +47,8 @@ void ScrollBarCallback(struct Sprite *sprite);
 //=================================================================================================
 static const struct SpriteSheet PanelSpriteSheet = {panelTiles, (64*64*4)/2, GFXTAG_PANEL };
 static const struct SpritePalette PanelSpritePalette = {panelPal, GFXTAG_PANEL};
+extern const struct SpriteTemplate Sprite1Template;
+
 static const struct OamData sPanelOam =
 {
 	.affineMode = ST_OAM_AFFINE_OFF,
@@ -173,4 +175,34 @@ static const struct SpriteTemplate ScrollBarSpriteTemplate =
 	.images = NULL,
 	.affineAnims = gDummySpriteAffineAnimTable,
 	.callback = ScrollBarCallback,
+};
+static const struct OamData sSprite1Oam =
+{
+    .affineMode = ST_OAM_AFFINE_OFF,
+    .objMode = ST_OAM_OBJ_NORMAL,
+    .shape = SPRITE_SHAPE(32x32),
+    .size = SPRITE_SIZE(32x32),
+    .priority = 1, // Above other sprites
+};
+
+static const union AnimCmd sSprite1Anim[] =
+{
+    ANIMCMD_FRAME(0, 0),
+    ANIMCMD_END
+};
+
+static const union AnimCmd *const sSprite1AnimTable[] =
+{
+    sSprite1Anim
+};
+
+const struct SpriteTemplate Sprite1Template =
+{
+    .tileTag = 0,
+    .paletteTag = 0,
+    .oam = &sSprite1Oam,
+    .anims = sSprite1AnimTable,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCallbackDummy,
 };
