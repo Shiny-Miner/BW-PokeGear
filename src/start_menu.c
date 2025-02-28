@@ -730,7 +730,7 @@ static void Task_PhoneCardWaitForKeyPress(u8 taskId)
     {
         PlaySE(SE_PC_OFF);
         BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 16, RGB_BLACK);
-        gTasks[taskId].func = Task_PhoneCardFadeOut;
+        gTasks[taskId].func = Task_PhoneCardFadeOutToStartMenu;
     }
 }
 
