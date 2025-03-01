@@ -33,3 +33,6 @@ PM
 
 #org @gText_StartMenu_TimeBase_12Hr
 [BUFFER3] [BUFFER1]:[BUFFER2] 
+
+#org @gText_NPCName1
+Reddish

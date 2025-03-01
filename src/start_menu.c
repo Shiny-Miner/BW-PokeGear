@@ -148,6 +148,7 @@ static void Task_PhoneCardFadeOutToStartMenu(u8 taskId);
 static void Task_PhoneCardWaitForKeyPress(u8 taskId);
 static void LoadPhoneCardBgGfx(void);
 static void DrawPhoneCardSprite(u16 x, u16 y);
+static void PrintNPCName(u8 x, u8 y, const u8 *npcName);
 
 static const struct StartMenuOption sStartMenuOptionsTable[] = 
 {
@@ -686,6 +687,8 @@ static void ShowPhoneCard(void)
     InitPhoneCardUI();
 }
 
+extern const u8 gText_NPCName1[];
+
 void InitPhoneCardUI(void)
 {
     SetVBlankCallback(NULL);
@@ -706,6 +709,7 @@ void InitPhoneCardUI(void)
     InitWindows(sMenuWindowTemplates);
     DeactivateAllTextPrinters();
     DrawPhoneCardSprite(40, 50);
+    PrintNPCName(120, 40, gText_NPCName1);
     BeginNormalPaletteFade(0xFFFFFFFF, 0, 16, 0, RGB_BLACK);
     SetVBlankCallback(VBlankCB_StartMenu);
     CreateTask(Task_PhoneCardWaitForKeyPress, 0);
@@ -747,9 +751,29 @@ extern const u8 Sprite1Tiles[];
 extern const u16 Sprite1Pal[];
 
 
+
 static void DrawPhoneCardSprite(u16 x, u16 y)
 {
     LoadSpriteSheet(&(struct SpriteSheet){Sprite1Tiles, 32 * 32 / 2, 0});
     LoadSpritePalette(&(struct SpritePalette){Sprite1Pal, 0});
     CreateSprite(&Sprite1Template, x, y, 0);
 }
+static void PrintNPCName(u8 x, u8 y, const u8 *npcName)
+{
+    struct WindowTemplate npcNameWindow = {
+        .bg = 0,
+        .tilemapLeft = x / 8,  // Convert pixel position to tile position
+        .tilemapTop = y / 8,
+        .width = 8,  // Width in tiles
+        .height = 2,  // Height in tiles
+        .paletteNum = 15,
+        .baseBlock = 0x200
+    };
+
+    u8 windowId = AddWindow(&npcNameWindow);
+    FillWindowPixelBuffer(windowId, PIXEL_FILL(1));
+    AddTextPrinterParameterized(windowId, 2, npcName, 0, 0, 0, NULL);
+    PutWindowTilemap(windowId);
+    CopyWindowToVram(windowId, 3);
+}
+
