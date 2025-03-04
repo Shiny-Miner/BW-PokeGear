@@ -147,8 +147,6 @@ static void ShowPhoneCard(void);
 static void Task_PhoneCardFadeOutToStartMenu(u8 taskId);
 static void Task_PhoneCardWaitForKeyPress(u8 taskId);
 static void LoadPhoneCardBgGfx(void);
-static void DrawPhoneCardSprite(u16 x, u16 y);
-static void PrintNPCName(u8 x, u8 y, const u8 *npcName);
 
 static const struct StartMenuOption sStartMenuOptionsTable[] = 
 {
@@ -689,7 +687,6 @@ static void ShowPhoneCard(void)
 
 extern const u8 gText_NPCName1[];
 extern const u8 gText_NPCName2[];
-static u8 sCurrentNPCIndex = 0; // 0 for first NPC, 1 for second NPC
 
 
 void InitPhoneCardUI(void)
@@ -711,8 +708,6 @@ void InitPhoneCardUI(void)
     
     InitWindows(sMenuWindowTemplates);
     DeactivateAllTextPrinters();
-    DrawPhoneCardSprite(40, 50);
-    PrintNPCName(120, 40, gText_NPCName1);
     BeginNormalPaletteFade(0xFFFFFFFF, 0, 16, 0, RGB_BLACK);
     SetVBlankCallback(VBlankCB_StartMenu);
     CreateTask(Task_PhoneCardWaitForKeyPress, 0);
@@ -740,20 +735,6 @@ static void Task_PhoneCardWaitForKeyPress(u8 taskId)
         BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 16, RGB_BLACK);
         gTasks[taskId].func = Task_PhoneCardFadeOutToStartMenu;
     }
-    else if (JOY_NEW(DPAD_DOWN))
-    {
-        PlaySE(SE_SELECT);
-        sCurrentNPCIndex = 1; // Switch to second NPC
-        DrawPhoneCardSprite(40, 50);
-        PrintNPCName(120, 40, gText_NPCName2);
-    }
-    else if (JOY_NEW(DPAD_UP))
-    {
-        PlaySE(SE_SELECT);
-        sCurrentNPCIndex = 0; // Switch back to first NPC
-        DrawPhoneCardSprite(40, 50);
-        PrintNPCName(120, 40, gText_NPCName1);
-    }
 }
 
 
@@ -769,49 +750,3 @@ extern const u8 Sprite1Tiles[];
 extern const u16 Sprite1Pal[];
 extern const u8 Sprite2Tiles[];
 extern const u16 Sprite2Pal[];
-
-
-
-static u8 sPhoneCardSpriteId = 0xFF; // Store the sprite ID to track the current sprite
-
-static void DrawPhoneCardSprite(u16 x, u16 y)
-{
-    // Delete the old sprite if it exists
-    if (sPhoneCardSpriteId != 0xFF)
-    {
-        DestroySprite(&gSprites[sPhoneCardSpriteId]);
-        sPhoneCardSpriteId = 0xFF; // Reset ID
-    }
-
-    // Select correct sprite data based on current NPC
-    const u8 *spriteTiles = (sCurrentNPCIndex == 0) ? Sprite1Tiles : Sprite2Tiles;
-    const u16 *spritePal = (sCurrentNPCIndex == 0) ? Sprite1Pal : Sprite2Pal;
-    const struct SpriteTemplate *spriteTemplate = (sCurrentNPCIndex == 0) ? &Sprite1Template : &Sprite2Template;
-
-    // Load the correct sprite
-    LoadSpriteSheet(&(struct SpriteSheet){spriteTiles, 32 * 32 / 2, sCurrentNPCIndex});
-    LoadSpritePalette(&(struct SpritePalette){spritePal, sCurrentNPCIndex});
-
-    // Create the new sprite and store its ID
-    sPhoneCardSpriteId = CreateSprite(spriteTemplate, x, y, 0);
-}
-
-
-static void PrintNPCName(u8 x, u8 y, const u8 *npcName)
-{
-    struct WindowTemplate npcNameWindow = {
-        .bg = 0,
-        .tilemapLeft = x / 8,  // Convert pixel position to tile position
-        .tilemapTop = y / 8,
-        .width = 8,  // Width in tiles
-        .height = 2,  // Height in tiles
-        .paletteNum = 15,
-        .baseBlock = 0x200
-    };
-
-    u8 windowId = AddWindow(&npcNameWindow);
-    FillWindowPixelBuffer(windowId, PIXEL_FILL(1));
-    AddTextPrinterParameterized(windowId, 2, npcName, 0, 0, 0, NULL);
-    PutWindowTilemap(windowId);
-    CopyWindowToVram(windowId, 3);
-}
