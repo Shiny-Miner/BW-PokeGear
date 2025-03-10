@@ -1,18 +1,18 @@
-#ifndef GUARD_START_MENU_H
-#define GUARD_START_MENU_H
+#ifndef GUARD_Pokegear_H
+#define GUARD_Pokegear_H
 
-#include "global.h" 
-#include "sprite.h" 
-#include "bg.h" 
-#include "window.h" 
-#include "text.h"
-#include "../src/graphics.h"
+#include "../include/global.h" 
+#include "../include/sprite.h" 
+#include "../include/bg.h" 
+#include "../include/window.h" 
+#include "../include/text.h"
+#include "graphics.h"
 
 #define PANEL_X 34
 #define PANEL_Y 41 
 #define HSPACING 20
 #define VSPACING 6
-#define icon_template(gfxtag) {.tileTag = (u16) gfxtag, .paletteTag = (u16) gfxtag, .oam = &sIconOamData, .anims = sAnimCmdTable_Icon, .images = NULL,.affineAnims = gDummySpriteAffineAnimTable, .callback = StartMenuIconCallback}
+#define icon_template(gfxtag) {.tileTag = (u16) gfxtag, .paletteTag = (u16) gfxtag, .oam = &sIconOamData, .anims = sAnimCmdTable_Icon, .images = NULL,.affineAnims = gDummySpriteAffineAnimTable, .callback = PokegearIconCallback}
 
 extern u8* GetMapName(u8* dest, u16 regionMapId, u16 padLength);
 extern u8  GetCurrentRegionMapSectionId(void); 
@@ -28,20 +28,20 @@ enum BGs
 	BG_BACKGROUND,
 }; 
 
-enum StartMenuOptions
+enum PokegearOptions
 {
-  STARTMENU_MAPCARD = 0,
-  STARTMENU_PHONECARD,
+  Pokegear_MAPCARD = 0,
+  Pokegear_PHONECARD,
 };
 
-struct StartMenuIcon
+struct PokegearIcon
 {
   const struct SpriteSheet spritesheet;
   const struct SpritePalette spritepalette;
   const struct SpriteTemplate sprtemplate;
 }; 
 
-struct StartMenuOption 
+struct PokegearOption 
 {
   u8 id;
   u8 * text;
@@ -51,8 +51,8 @@ struct StartMenuOption
 };
 
 // Text
-extern const u8 gText_StartMenu_MapCard[];
-extern const u8 gText_StartMenu_PhoneCard[];
+extern const u8 gText_Pokegear_MapCard[];
+extern const u8 gText_Pokegear_PhoneCard[];
 
 //Time strings
 extern const u8 gText_Sun[];
@@ -64,7 +64,7 @@ extern const u8 gText_Fri[];
 extern const u8 gText_Sat[]; 
 extern const u8 gText_AM[]; 
 extern const u8 gText_PM[]; 
-static const struct BgTemplate sStartMenuBgTemplates[] =
+static const struct BgTemplate sPokegearBgTemplates[] =
 {
 	[BG_TEXT] =
 	{
@@ -109,15 +109,15 @@ static const struct BgTemplate sStartMenuBgTemplates[] =
 }; 
 
 
-static struct StartMenuIcon StartMenuIconTable[] = 
+static struct PokegearIcon PokegearIconTable[] = 
 {
-  [STARTMENU_MAPCARD] = 
+  [Pokegear_MAPCARD] = 
   {
     .spritesheet = {TownMapTiles, 32*32, GFXTAG_MAPCARD},
     .spritepalette =  {TownMapPal, GFXTAG_MAPCARD},
     .sprtemplate = icon_template(GFXTAG_MAPCARD)
   },
-  [STARTMENU_PHONECARD] = 
+  [Pokegear_PHONECARD] = 
   {
     .spritesheet = {phonecardTiles, 32*32, GFXTAG_PHONECARD},
     .spritepalette =  {phonecardPal, GFXTAG_PHONECARD},
@@ -136,4 +136,4 @@ static const struct TextColor sWhiteText =
 
 
 
-#endif // GUARD_START_MENU_H
+#endif // GUARD_Pokegear_H

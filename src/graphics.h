@@ -17,9 +17,9 @@ extern const u8 panelTiles[];
 extern const u16 panelPal[];  
 
 // BG Gfx data
-extern const u8 StartMenuBgTiles[]; 
-extern const u8 StartMenuBgMap[];
-extern const u16 StartMenuBgPal[];
+extern const u8 PokegearBgTiles[]; 
+extern const u8 PokegearBgMap[];
+extern const u16 PokegearBgPal[];
 
 // Options Icon Gfx data
 extern const u8 TownMapTiles[];
@@ -41,7 +41,7 @@ extern const u8 PhoneCardBgMap[];
 
 //================================================================================================
 void PanelCallBack(struct Sprite *sprite);
-void StartMenuIconCallback(struct Sprite *sprite);
+void PokegearIconCallback(struct Sprite *sprite);
 void ScrollBarCallback(struct Sprite *sprite);
 
 //=================================================================================================

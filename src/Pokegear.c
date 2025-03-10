@@ -1,5 +1,5 @@
 #include "../include/global.h" 
-#include "../include/start_menu.h" 
+#include "Pokegear.h" 
 #include "../include/bg.h"
 #include "../include/data.h"
 #include "../include/decompress.h"
@@ -32,13 +32,13 @@
 #include "../include/gba/types.h"
 #include "../include/new/Vanilla_functions.h"
 
-#define MAX_STARTMENU_ITEMS 2
-#define cpos sStartMenuPtr->cursorpos[0]
-#define scrolloffset sStartMenuPtr->cursorpos[1]
-#define numitems sStartMenuPtr->NumStartMenuItems[0]
-#define numonscreenitems sStartMenuPtr->NumStartMenuItems[1]
-#define menuitems sStartMenuPtr->CurrentOptionsTable[0] 
-#define onscreenmenuitems sStartMenuPtr->CurrentOptionsTable[1]
+#define MAX_Pokegear_ITEMS 2
+#define cpos sPokegearPtr->cursorpos[0]
+#define scrolloffset sPokegearPtr->cursorpos[1]
+#define numitems sPokegearPtr->NumPokegearItems[0]
+#define numonscreenitems sPokegearPtr->NumPokegearItems[1]
+#define menuitems sPokegearPtr->CurrentOptionsTable[0] 
+#define onscreenmenuitems sPokegearPtr->CurrentOptionsTable[1]
 extern void QuestLog_CutRecording(void);
 extern void InitRegionMapWithExitCB(u8 type, void (*callback)(void));
 
@@ -53,16 +53,16 @@ enum WindowIds
 };   
 
 
-struct StartMenuResources
+struct PokegearResources
 {
   u8 cursorpos[2];
   u8* sBgTilemapBuffer;
-  u8 NumStartMenuItems[2];
-  u8 CurrentOptionsTable[2][MAX_STARTMENU_ITEMS]; 
+  u8 NumPokegearItems[2];
+  u8 CurrentOptionsTable[2][MAX_Pokegear_ITEMS]; 
   u8 IconSpriteIds[6];
 };   
 
-#define sStartMenuPtr (*((struct StartMenuResources**) 0x203E038))  
+#define sPokegearPtr (*((struct PokegearResources**) 0x203E038))  
 
 extern u16 StdTextPal[];
 static const struct WindowTemplate sMenuWindowTemplates[] = 
@@ -117,17 +117,17 @@ static const struct WindowTemplate sMenuWindowTemplates[] =
 void CB2_ReturnToFieldWithOpenMenu(void); 
 static void ClearTasksAndGraphicalStructs(void); 
 static void ClearVramOamPlttRegs(void);
-static void VBlankCB_StartMenu(void); 
-static void MainCB2_StartMenu(void);
-static void ReturnToFieldFromStartMenu(void);
-static bool8 InitStartMenuGUI(void); 
-static void Task_StartMenuFadeIn(u8 taskId); 
-static void Task_StartMenuWaitForKeyPress(u8 taskId); 
-static void LoadStartMenuBgGfx(void);
-static void SetUpStartMenu_NormalField(void); 
+static void VBlankCB_Pokegear(void); 
+static void MainCB2_Pokegear(void);
+static void ReturnToFieldFromPokegear(void);
+static bool8 InitPokegearGUI(void); 
+static void Task_PokegearFadeIn(u8 taskId); 
+static void Task_PokegearWaitForKeyPress(u8 taskId); 
+static void LoadPokegearBgGfx(void);
+static void SetUpPokegear_NormalField(void); 
 static void DrawPanels(void); 
-static void Task_StartMenuFadeOut(u8 taskId); 
-static void FreeAndCloseStartMenu(u8 taskId); 
+static void Task_PokegearFadeOut(u8 taskId); 
+static void FreeAndClosePokegear(u8 taskId); 
 static void PrintGUIMapName(void);
 static void CleanWindow(u8 windowId); 
 static void CommitWindow(u8 windowId); 
@@ -135,31 +135,31 @@ static void CleanWindows(void);
 static void CommitWindows(void); 
 static void PrintGUIMenuItemsName(void);
 static void DrawIcons(void);
-void StartMenu_Init(void); 
+void Pokegear_Init(void); 
 static void CreateScrollbar(void) ;
 static void CalculateAndConfigureOnScreenOptions(void);
-static void Task_RunStartMenuOptionFuncOrScript(u8 taskId);
-static void RefreshStartMenuOptions(void);
+static void Task_RunPokegearOptionFuncOrScript(u8 taskId);
+static void RefreshPokegearOptions(void);
 static void PrintAndUpdateTimeText();
 static void ShowTownMap(void);
 void InitPhoneCardUI(void);
 static void ShowPhoneCard(void);
-static void Task_PhoneCardFadeOutToStartMenu(u8 taskId);
+static void Task_PhoneCardFadeOutToPokegear(u8 taskId);
 static void Task_PhoneCardWaitForKeyPress(u8 taskId);
 static void LoadPhoneCardBgGfx(void);
 
-static const struct StartMenuOption sStartMenuOptionsTable[] = 
+static const struct PokegearOption sPokegearOptionsTable[] = 
 {
   {
-    .id =  STARTMENU_MAPCARD,
-    .text = (u8*) gText_StartMenu_MapCard,
+    .id =  Pokegear_MAPCARD,
+    .text = (u8*) gText_Pokegear_MapCard,
     .flag = 0,
     .script = NULL,
     .func = ShowTownMap
   },
   {
-    .id = STARTMENU_PHONECARD,
-    .text = (u8*) gText_StartMenu_PhoneCard,
+    .id = Pokegear_PHONECARD,
+    .text = (u8*) gText_Pokegear_PhoneCard,
     .flag = 0,
     .script = NULL,
     .func = ShowPhoneCard
@@ -215,13 +215,13 @@ static void ClearVramOamPlttRegs(void)
 	
 }
 
-static void VBlankCB_StartMenu(void)
+static void VBlankCB_Pokegear(void)
 {
 	LoadOam();
 	ProcessSpriteCopyRequests();
 	TransferPlttBuffer();
 }
-static void MainCB2_StartMenu(void)
+static void MainCB2_Pokegear(void)
 {
 	RunTasks();
   AnimateSprites();
@@ -229,7 +229,7 @@ static void MainCB2_StartMenu(void)
 	UpdatePaletteFade();
 }
 
-void CB2_StartMenu(void)
+void CB2_Pokegear(void)
 {
 	switch (gMain.state) {
 		case 0:
@@ -245,17 +245,17 @@ void CB2_StartMenu(void)
 			gMain.state++;
 			break;
 		case 2: 
-		  sStartMenuPtr->sBgTilemapBuffer = Malloc(0x1000);
+		  sPokegearPtr->sBgTilemapBuffer = Malloc(0x1000);
 			ResetBgsAndClearDma3BusyFlags(0);
-			InitBgsFromTemplates(0, sStartMenuBgTemplates, NELEMS(sStartMenuBgTemplates));
- 			SetBgTilemapBuffer(BG_BACKGROUND, sStartMenuPtr->sBgTilemapBuffer);
+			InitBgsFromTemplates(0, sPokegearBgTemplates, NELEMS(sPokegearBgTemplates));
+ 			SetBgTilemapBuffer(BG_BACKGROUND, sPokegearPtr->sBgTilemapBuffer);
 			gMain.state++;
 			break;
 		case 3: 
 		  if (!(cpos))
 		     cpos = 0;
-		  SetUpStartMenu_NormalField();
-			LoadStartMenuBgGfx(); 
+		  SetUpPokegear_NormalField();
+			LoadPokegearBgGfx(); 
 			gMain.state++;
 			break;
 		case 4:
@@ -268,7 +268,7 @@ void CB2_StartMenu(void)
 			}
 			break;
 		case 5:
-	    Free(sStartMenuPtr->sBgTilemapBuffer);
+	    Free(sPokegearPtr->sBgTilemapBuffer);
 			InitWindows(sMenuWindowTemplates);
 			DeactivateAllTextPrinters();
 			gMain.state++;
@@ -278,38 +278,38 @@ void CB2_StartMenu(void)
 			gMain.state++;
 			break;
 		case 7:
-			SetVBlankCallback(VBlankCB_StartMenu);
-			InitStartMenuGUI();
-			CreateTask(Task_StartMenuFadeIn, 0);
-			SetMainCallback2(MainCB2_StartMenu);
+			SetVBlankCallback(VBlankCB_Pokegear);
+			InitPokegearGUI();
+			CreateTask(Task_PokegearFadeIn, 0);
+			SetMainCallback2(MainCB2_Pokegear);
 			gMain.state = 0;
 			break;
 	}
 } 
 
-static void Task_StartMenuFadeIn(u8 taskId)
+static void Task_PokegearFadeIn(u8 taskId)
 {
 	if (!gPaletteFade.active)
 	{
-			gTasks[taskId].func = Task_StartMenuWaitForKeyPress;
+			gTasks[taskId].func = Task_PokegearWaitForKeyPress;
 	}
 }  
 
-static void LoadStartMenuBgGfx(void)
+static void LoadPokegearBgGfx(void)
 {
 	const u8 *tiles, *map;
 	const u16 *palette;
-  tiles = StartMenuBgTiles; 
-  map = StartMenuBgMap; 
-  palette = StartMenuBgPal;
+  tiles = PokegearBgTiles; 
+  map = PokegearBgMap; 
+  palette = PokegearBgPal;
 	DecompressAndCopyTileDataToVram(BG_BACKGROUND, tiles, 0, 0, 0);
-	LZDecompressWram(map, sStartMenuPtr->sBgTilemapBuffer);
+	LZDecompressWram(map, sPokegearPtr->sBgTilemapBuffer);
 	LoadPalette(palette, 0, 0x20); 
 	palette = StdTextPal;
 	LoadPalette(palette, 14*16, 0x20);
 } 
 
-static bool8 InitStartMenuGUI(void)
+static bool8 InitPokegearGUI(void)
 { 
   CleanWindows();
   DrawPanels(); 
@@ -321,7 +321,7 @@ static bool8 InitStartMenuGUI(void)
   CommitWindows();
   return TRUE;
 }
-static void Task_StartMenuWaitForKeyPress(u8 taskId)
+static void Task_PokegearWaitForKeyPress(u8 taskId)
 { 
   // Handles Input
   if (gClock.second==0)
@@ -335,7 +335,7 @@ static void Task_StartMenuWaitForKeyPress(u8 taskId)
     cpos = 0xFF;
     PlaySE(SE_PC_OFF);
     BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 16, RGB_BLACK);
-		gTasks[taskId].func = Task_StartMenuFadeOut;
+		gTasks[taskId].func = Task_PokegearFadeOut;
   } 
   else if(JOY_NEW(A_BUTTON))
   {
@@ -343,7 +343,7 @@ static void Task_StartMenuWaitForKeyPress(u8 taskId)
     VarSet(0x8000, cpos);
     VarSet(0x8001, scrolloffset);
     BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 16, RGB_BLACK);
-    gTasks[taskId].func = Task_RunStartMenuOptionFuncOrScript;
+    gTasks[taskId].func = Task_RunPokegearOptionFuncOrScript;
   }
   else if (JOY_NEW(DPAD_RIGHT)) 
   {
@@ -367,7 +367,7 @@ static void Task_StartMenuWaitForKeyPress(u8 taskId)
     {
       PlaySE(SE_SELECT);
       scrolloffset -= 1; 
-      RefreshStartMenuOptions();
+      RefreshPokegearOptions();
     }
     else if (cpos-2>=0)  
     {
@@ -382,7 +382,7 @@ static void Task_StartMenuWaitForKeyPress(u8 taskId)
     {
       scrolloffset += 1; 
       PlaySE(SE_SELECT);
-      RefreshStartMenuOptions();
+      RefreshPokegearOptions();
     }
     else if (cpos+2<numonscreenitems)  
    {
@@ -393,42 +393,42 @@ static void Task_StartMenuWaitForKeyPress(u8 taskId)
 } 
 
 
-static void Task_RunStartMenuOptionFuncOrScript(u8 taskId)
+static void Task_RunPokegearOptionFuncOrScript(u8 taskId)
 {
   if (!gPaletteFade.active)
   { 
-    if (sStartMenuOptionsTable[onscreenmenuitems[cpos]].func!=NULL) 
-      SetMainCallback2(sStartMenuOptionsTable[onscreenmenuitems[cpos]].func);
+    if (sPokegearOptionsTable[onscreenmenuitems[cpos]].func!=NULL) 
+      SetMainCallback2(sPokegearOptionsTable[onscreenmenuitems[cpos]].func);
     else
     {
-      ScriptContext1_SetupScript(sStartMenuOptionsTable[onscreenmenuitems[cpos]].script); 
-      SetMainCallback2(ReturnToFieldFromStartMenu);
+      ScriptContext1_SetupScript(sPokegearOptionsTable[onscreenmenuitems[cpos]].script); 
+      SetMainCallback2(ReturnToFieldFromPokegear);
     }
-    FreeAndCloseStartMenu(taskId);
+    FreeAndClosePokegear(taskId);
   }
 } 
 
-void StartMenu_Init(void)
+void Pokegear_Init(void)
 {
 	if (!gPaletteFade.active)
 	{
 	  ResetBgsAndClearDma3BusyFlags(0);
 		gHelpSystemEnabled = FALSE;
 		CleanupOverworldWindowsAndTilemaps();
-		sStartMenuPtr = Calloc(sizeof(struct StartMenuResources));
+		sPokegearPtr = Calloc(sizeof(struct PokegearResources));
 		PlaySE(SE_PC_LOGIN);
-		SetMainCallback2(CB2_StartMenu);
+		SetMainCallback2(CB2_Pokegear);
 	} 
 }
 
-static void SetUpStartMenu_NormalField(void) 
+static void SetUpPokegear_NormalField(void) 
 {
   u8 cursor = 0;
-  for (u8 i = 0; i < MAX_STARTMENU_ITEMS; i++)
+  for (u8 i = 0; i < MAX_Pokegear_ITEMS; i++)
   { 
-    if (sStartMenuOptionsTable[i].flag!=0 && !FlagGet(sStartMenuOptionsTable[i].flag)) 
+    if (sPokegearOptionsTable[i].flag!=0 && !FlagGet(sPokegearOptionsTable[i].flag)) 
       continue;
-    menuitems[cursor] = sStartMenuOptionsTable[i].id;
+    menuitems[cursor] = sPokegearOptionsTable[i].id;
     cursor++;
   } 
   numitems = cursor; 
@@ -450,7 +450,7 @@ void PanelCallBack(struct Sprite *sprite)
     StartSpriteAnimIfDifferent(sprite, 0);
 }
 
-void StartMenuIconCallback(struct Sprite *sprite) 
+void PokegearIconCallback(struct Sprite *sprite) 
 { 
   if(sprite->data[0] == cpos)
   {
@@ -511,38 +511,38 @@ static void DrawIcons(void)
         break; 
       x = (PANEL_X -11) + (HSPACING-2+ 64/2 + 64)*i;
       y = (PANEL_Y-3)+ (VSPACING +32)*j; 
-      LoadSpriteSheet(&StartMenuIconTable[onscreenmenuitems[counter]].spritesheet); 
-      LoadSpritePalette(&StartMenuIconTable[onscreenmenuitems[counter]].spritepalette);
-      u8 SpriteId = CreateSprite(&StartMenuIconTable[onscreenmenuitems[counter]].sprtemplate , x, y, 0);
+      LoadSpriteSheet(&PokegearIconTable[onscreenmenuitems[counter]].spritesheet); 
+      LoadSpritePalette(&PokegearIconTable[onscreenmenuitems[counter]].spritepalette);
+      u8 SpriteId = CreateSprite(&PokegearIconTable[onscreenmenuitems[counter]].sprtemplate , x, y, 0);
       gSprites[SpriteId].data[0] = counter;
       gSprites[SpriteId].data[1] = 3;
       gSprites[SpriteId].data[2] = y;
       gSprites[SpriteId].data[3] = -1; 
-      sStartMenuPtr->IconSpriteIds[counter] = SpriteId;
+      sPokegearPtr->IconSpriteIds[counter] = SpriteId;
       counter++; 
     }
   }
 }
 
 
-static void FreeAndCloseStartMenu(u8 taskId)
+static void FreeAndClosePokegear(u8 taskId)
 {
-	Free(sStartMenuPtr);
+	Free(sPokegearPtr);
 	FreeAllWindowBuffers();
 	BGMVolumeMax_EnableHelpSystemReduction();
 	DestroyTask(taskId);
 } 
 
-static void Task_StartMenuFadeOut(u8 taskId)
+static void Task_PokegearFadeOut(u8 taskId)
 {
 	if (!gPaletteFade.active)
 	{
 	  gHelpSystemEnabled = TRUE;
-		SetMainCallback2(ReturnToFieldFromStartMenu);
-		FreeAndCloseStartMenu(taskId); 
+		SetMainCallback2(ReturnToFieldFromPokegear);
+		FreeAndClosePokegear(taskId); 
 	}
 }
-static void ReturnToFieldFromStartMenu(void) {
+static void ReturnToFieldFromPokegear(void) {
   FieldClearVBlankHBlankCallbacks();
   gFieldCallback = FieldCB_WarpExitFadeFromBlack;
   CB2_ReturnToField();
@@ -593,7 +593,7 @@ static void PrintGUIMenuItemsName(void)
         break; 
       x = (PANEL_X + (HSPACING + 64/2 + 64)*column) + 8;
       y = (PANEL_Y + (VSPACING + 32)*row) - 40;
-        WindowPrint(WIN_ITEMS, 1, x, y, &sWhiteText, 0, sStartMenuOptionsTable[onscreenmenuitems[counter]].text); 
+        WindowPrint(WIN_ITEMS, 1, x, y, &sWhiteText, 0, sPokegearOptionsTable[onscreenmenuitems[counter]].text); 
       counter++;
     }
   }
@@ -601,10 +601,10 @@ static void PrintGUIMenuItemsName(void)
 
 void CB2_ReturnToFieldWithOpenMenu(void)
 { 
-  sStartMenuPtr = Calloc(sizeof(struct StartMenuResources));
+  sPokegearPtr = Calloc(sizeof(struct PokegearResources));
   cpos = VarGet(0x8000); 
   scrolloffset = VarGet(0x8001);
-  SetMainCallback2(CB2_StartMenu);
+  SetMainCallback2(CB2_Pokegear);
 } 
 
 
@@ -622,11 +622,11 @@ static void CalculateAndConfigureOnScreenOptions(void)
 }
 
 
-static void RefreshStartMenuOptions(void) 
+static void RefreshPokegearOptions(void) 
 {
   CleanWindow(WIN_ITEMS);
   for (u8 i=0; i<numonscreenitems; i++) 
-    DestroySpriteAndFreeResources(&gSprites[sStartMenuPtr->IconSpriteIds[i]]);
+    DestroySpriteAndFreeResources(&gSprites[sPokegearPtr->IconSpriteIds[i]]);
   CalculateAndConfigureOnScreenOptions();
   DrawIcons();
   PrintGUIMenuItemsName();
@@ -666,7 +666,7 @@ const u8 * sDayNames[] =
   gText_Sat,
 };
 
-extern u8 gText_StartMenu_TimeBase_12Hr[];
+extern u8 gText_Pokegear_TimeBase_12Hr[];
 
 static void PrintAndUpdateTimeText()
 {
@@ -674,7 +674,7 @@ static void PrintAndUpdateTimeText()
 	ConvertIntToDecimalStringN(gStringVar1, (gClock.hour == 0) ? 12 : (gClock.hour > 12) ? gClock.hour - 12 : gClock.hour, STR_CONV_MODE_RIGHT_ALIGN, 2); //Hour - 12hr format
 	ConvertIntToDecimalStringN(gStringVar2, gClock.minute, STR_CONV_MODE_LEADING_ZEROS, 2); //Minute
 	StringCopy(gStringVar3, sDayNames[gClock.dayOfWeek]); //Day of Week
-	StringExpandPlaceholders(gStringVar4, gText_StartMenu_TimeBase_12Hr);
+	StringExpandPlaceholders(gStringVar4, gText_Pokegear_TimeBase_12Hr);
 //	AddTextPrinterParameterized(sTimeWindowId, 2, gStringVar4, 4, 3, 0xFF, NULL);
   WindowPrint(WIN_TOPBAR_TIME, 0, 3, 0, &sWhiteText, 0 ,gStringVar4);
   WindowPrint(WIN_TOPBAR_TIME, 0, 63, 0, &sWhiteText, 0 ,amPMString);
@@ -696,10 +696,10 @@ void InitPhoneCardUI(void)
     SetGpuReg(REG_OFFSET_DISPCNT, DISPCNT_MODE_0 | DISPCNT_OBJ_1D_MAP | DISPCNT_BG_ALL_ON | DISPCNT_OBJ_ON);
     
     ClearTasksAndGraphicalStructs();
-    sStartMenuPtr->sBgTilemapBuffer = Malloc(0x1000);
+    sPokegearPtr->sBgTilemapBuffer = Malloc(0x1000);
     ResetBgsAndClearDma3BusyFlags(0);
-    InitBgsFromTemplates(0, sStartMenuBgTemplates, NELEMS(sStartMenuBgTemplates));
-    SetBgTilemapBuffer(BG_BACKGROUND, sStartMenuPtr->sBgTilemapBuffer);
+    InitBgsFromTemplates(0, sPokegearBgTemplates, NELEMS(sPokegearBgTemplates));
+    SetBgTilemapBuffer(BG_BACKGROUND, sPokegearPtr->sBgTilemapBuffer);
     LoadPhoneCardBgGfx();
     
     ShowBg(BG_TEXT);
@@ -709,9 +709,9 @@ void InitPhoneCardUI(void)
     InitWindows(sMenuWindowTemplates);
     DeactivateAllTextPrinters();
     BeginNormalPaletteFade(0xFFFFFFFF, 0, 16, 0, RGB_BLACK);
-    SetVBlankCallback(VBlankCB_StartMenu);
+    SetVBlankCallback(VBlankCB_Pokegear);
     CreateTask(Task_PhoneCardWaitForKeyPress, 0);
-    SetMainCallback2(MainCB2_StartMenu);
+    SetMainCallback2(MainCB2_Pokegear);
 }
 
 static void LoadPhoneCardBgGfx(void)
@@ -723,7 +723,7 @@ static void LoadPhoneCardBgGfx(void)
     palette = PhoneCardBgPal;
     
     DecompressAndCopyTileDataToVram(BG_BACKGROUND, tiles, 0, 0, 0);
-    LZDecompressWram(map, sStartMenuPtr->sBgTilemapBuffer);
+    LZDecompressWram(map, sPokegearPtr->sBgTilemapBuffer);
     LoadPalette(palette, 0, 0x20);
 }
 
@@ -733,17 +733,17 @@ static void Task_PhoneCardWaitForKeyPress(u8 taskId)
     {
         PlaySE(SE_PC_OFF);
         BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 16, RGB_BLACK);
-        gTasks[taskId].func = Task_PhoneCardFadeOutToStartMenu;
+        gTasks[taskId].func = Task_PhoneCardFadeOutToPokegear;
     }
 }
 
 
-static void Task_PhoneCardFadeOutToStartMenu(u8 taskId)
+static void Task_PhoneCardFadeOutToPokegear(u8 taskId)
 {
     if (!gPaletteFade.active)
     {
         CB2_ReturnToFieldWithOpenMenu();
-        FreeAndCloseStartMenu(taskId);
+        FreeAndClosePokegear(taskId);
     }
 }
 extern const u8 Sprite1Tiles[];
