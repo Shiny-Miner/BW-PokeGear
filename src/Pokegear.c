@@ -60,6 +60,7 @@ struct PokegearResources
   u8 NumPokegearItems[2];
   u8 CurrentOptionsTable[2][MAX_Pokegear_ITEMS]; 
   u8 IconSpriteIds[6];
+  u8 ArrowSpriteIds[2];
 };   
 
 #define sPokegearPtr (*((struct PokegearResources**) 0x203E038))  
@@ -147,6 +148,11 @@ static void ShowPhoneCard(void);
 static void Task_PhoneCardFadeOutToPokegear(u8 taskId);
 static void Task_PhoneCardWaitForKeyPress(u8 taskId);
 static void LoadPhoneCardBgGfx(void);
+static void Task_PhoneCardInputHandler(u8 taskId);
+static void PrintPhoneCardUI(void);
+
+#define PHONECARD_MAX_VISIBLE 3
+static u8 sArrowSpriteIds[2] = {MAX_SPRITES, MAX_SPRITES};
 
 static const struct PokegearOption sPokegearOptionsTable[] = 
 {
@@ -640,18 +646,47 @@ static void CreateScrollbar(void)
 
 }
 
-void ScrollBarCallback(struct Sprite *sprite) 
+extern const u8 gText_NPCName1[];
+extern const u8 gText_NPCName2[];
+extern const u8 gText_NPCMsg1[];
+extern const u8 gText_NPCMsg2[];
+static u32 sPhoneCardScroll = 0;
+static u32 sPhoneCardCursor = 0; // 0, 1, or 2
+static bool8 sPhoneCardMsgActive = FALSE;
+
+static const u8* const sPhoneCardNames[] = {
+    gText_NPCName1,
+    gText_NPCName2,
+};
+
+static const u8* const sPhoneCardMessages[] = {
+    gText_NPCMsg1,
+    gText_NPCMsg2,
+};
+
+static const struct { u8 x; u8 y; } sPhoneCardEntryPositions[PHONECARD_MAX_VISIBLE] = {
+  {16, 0},   // Slot 0: x = 2, y = 4 (in tiles)
+  {16, 1},   // Slot 1
+  {16, 3},  // Slot 2
+};
+#define PHONECARD_ENTRY_COUNT ARRAY_COUNT(sPhoneCardNames)
+
+
+void ScrollBarCallback(struct Sprite *sprite)
 {
-  u8 errorCorrection;
-  if (scrolloffset==(numitems/2-3+numitems%2))
-    errorCorrection = 62 - (62/(numitems/2-3+numitems%2))*(numitems/2-3+numitems%2);
-  else 
-    errorCorrection = 0;
-  if (numitems/2-3+numitems%2<= 0) 
-    sprite->invisible = TRUE;
-  else if(48 + 62/(numitems/2-3+numitems%2)*scrolloffset+errorCorrection != sprite->pos1.y)
-    sprite->pos1.y = 48 + 62/(numitems/2-3+numitems%2)*scrolloffset+errorCorrection; 
-  }
+    if (PHONECARD_ENTRY_COUNT <= PHONECARD_MAX_VISIBLE)
+    {
+        sprite->invisible = TRUE;
+        return;
+    }
+
+    sprite->invisible = FALSE;
+
+    u32 scrollRange = PHONECARD_ENTRY_COUNT - PHONECARD_MAX_VISIBLE;
+    u8 posY = 48 + ((sPhoneCardScroll * 62) / scrollRange);
+
+    sprite->pos1.y = posY;
+}
 
  
 
@@ -685,9 +720,6 @@ static void ShowPhoneCard(void)
     InitPhoneCardUI();
 }
 
-extern const u8 gText_NPCName1[];
-extern const u8 gText_NPCName2[];
-
 
 void InitPhoneCardUI(void)
 {
@@ -701,6 +733,24 @@ void InitPhoneCardUI(void)
     InitBgsFromTemplates(0, sPokegearBgTemplates, NELEMS(sPokegearBgTemplates));
     SetBgTilemapBuffer(BG_BACKGROUND, sPokegearPtr->sBgTilemapBuffer);
     LoadPhoneCardBgGfx();
+    // Scrollbar Setup
+    LoadSpriteSheet(&ScrollBarSpriteSheet);
+    LoadSpritePalette(&ScrollBarSpritePalette);
+    CreateSprite(&ScrollBarSpriteTemplate, 240 - 5, 48, 0);
+    LoadSpriteSheet(&(struct SpriteSheet){arrow_upTiles, 0x20, GFXTAG_ARROW_UP});
+LoadSpritePalette(&(struct SpritePalette){arrow_upPal, GFXTAG_ARROW_UP});
+
+LoadSpriteSheet(&(struct SpriteSheet){arrow_downTiles, 0x20, GFXTAG_ARROW_DOWN});
+LoadSpritePalette(&(struct SpritePalette){arrow_downPal, GFXTAG_ARROW_DOWN});
+
+// Place them (hide/show based on scroll)
+u8 arrowUpId = CreateSprite(&sSpriteTemplate_ArrowUp, 220, 32, 0);
+u8 arrowDownId = CreateSprite(&sSpriteTemplate_ArrowDown, 220, 112, 0);
+
+// Save them to hide/show or destroy later
+sPokegearPtr->ArrowSpriteIds[0] = arrowUpId;
+sPokegearPtr->ArrowSpriteIds[1] = arrowDownId;
+
     
     ShowBg(BG_TEXT);
     ShowBg(BG_BACKGROUND);
@@ -710,7 +760,12 @@ void InitPhoneCardUI(void)
     DeactivateAllTextPrinters();
     BeginNormalPaletteFade(0xFFFFFFFF, 0, 16, 0, RGB_BLACK);
     SetVBlankCallback(VBlankCB_Pokegear);
-    CreateTask(Task_PhoneCardWaitForKeyPress, 0);
+    sPhoneCardScroll = 0;
+    sPhoneCardCursor = 0;
+    sPhoneCardMsgActive = FALSE;
+    PrintPhoneCardUI();
+    CreateTask(Task_PhoneCardInputHandler, 0);
+
     SetMainCallback2(MainCB2_Pokegear);
 }
 
@@ -744,9 +799,122 @@ static void Task_PhoneCardFadeOutToPokegear(u8 taskId)
     {
         CB2_ReturnToFieldWithOpenMenu();
         FreeAndClosePokegear(taskId);
+        // Destroy arrow sprites
+for (int i = 0; i < 2; i++)
+{
+    if (sArrowSpriteIds[i] < MAX_SPRITES)
+    {
+        DestroySprite(&gSprites[sArrowSpriteIds[i]]);
+        sArrowSpriteIds[i] = MAX_SPRITES;
     }
 }
-extern const u8 Sprite1Tiles[];
-extern const u16 Sprite1Pal[];
-extern const u8 Sprite2Tiles[];
-extern const u16 Sprite2Pal[];
+
+    }
+}
+
+
+static void PrintPhoneCardUI(void)
+{
+    CleanWindow(WIN_ITEMS);
+
+    for (u8 i = 0; i < PHONECARD_MAX_VISIBLE; ++i)
+    {
+        u8 idx = sPhoneCardScroll + i;
+        if (idx >= PHONECARD_ENTRY_COUNT)
+            break;
+
+        u8 color = (i == sPhoneCardCursor) ? 1 : 0;
+        u8 x = sPhoneCardEntryPositions[i].x;
+        u8 y = sPhoneCardEntryPositions[i].y;
+        WindowPrint(WIN_ITEMS, color, x * 8, y * 8, &sWhiteText, 0, sPhoneCardNames[idx]);
+    }
+
+    // Arrow sprite visibility logic
+    if (sArrowSpriteIds[0] < MAX_SPRITES)
+        gSprites[sArrowSpriteIds[0]].invisible = (sPhoneCardScroll == 0);
+
+    if (sArrowSpriteIds[1] < MAX_SPRITES)
+        gSprites[sArrowSpriteIds[1]].invisible = (sPhoneCardScroll + PHONECARD_MAX_VISIBLE >= PHONECARD_ENTRY_COUNT);
+
+    CommitWindow(WIN_ITEMS);
+}
+
+
+static void ShowPhoneCardMessage(const u8* msg)
+{
+    FillWindowPixelBuffer(WIN_BOTTOMBAR, PIXEL_FILL(0));
+    WindowPrint(WIN_BOTTOMBAR, 0, 1, 1, &sWhiteText, 0, msg);
+    PutWindowTilemap(WIN_BOTTOMBAR);
+    CopyWindowToVram(WIN_BOTTOMBAR, COPYWIN_BOTH);
+    sPhoneCardMsgActive = TRUE;
+}
+
+static void HidePhoneCardMessage(void)
+{
+    FillWindowPixelBuffer(WIN_BOTTOMBAR, PIXEL_FILL(0));
+    ClearWindowTilemap(WIN_BOTTOMBAR);
+    CopyWindowToVram(WIN_BOTTOMBAR, COPYWIN_BOTH);
+    sPhoneCardMsgActive = FALSE;
+}
+
+static void Task_PhoneCardInputHandler(u8 taskId)
+{
+    if (JOY_NEW(B_BUTTON))
+    {
+        if (sPhoneCardMsgActive)
+        {
+            HidePhoneCardMessage();
+            PlaySE(SE_SELECT);
+            return;
+        }
+
+        PlaySE(SE_PC_OFF);
+        BeginNormalPaletteFade(0xFFFFFFFF, 0, 0, 16, RGB_BLACK);
+        gTasks[taskId].func = Task_PhoneCardFadeOutToPokegear;
+    }
+    else if (!sPhoneCardMsgActive)
+    {
+        if (JOY_NEW(DPAD_UP))
+        {
+            if (sPhoneCardCursor > 0)
+            {
+                sPhoneCardCursor--;
+                PlaySE(SE_SELECT);
+                PrintPhoneCardUI();
+            }
+            else if (sPhoneCardScroll > 0)
+            {
+                sPhoneCardScroll--;
+                PlaySE(SE_SELECT);
+                PrintPhoneCardUI();
+            }
+        }
+        else if (JOY_NEW(DPAD_DOWN))
+        {
+            if ((sPhoneCardScroll + sPhoneCardCursor + 1) < PHONECARD_ENTRY_COUNT)
+            {
+                if (sPhoneCardCursor < PHONECARD_MAX_VISIBLE - 1)
+                {
+                    sPhoneCardCursor++;
+                    PlaySE(SE_SELECT);
+                    PrintPhoneCardUI();
+                }
+                else
+                {
+                    sPhoneCardScroll++;
+                    PlaySE(SE_SELECT);
+                    PrintPhoneCardUI();
+                }
+            }
+        }
+        else if (JOY_NEW(A_BUTTON))
+        {
+            u8 idx = sPhoneCardScroll + sPhoneCardCursor;
+            if (idx < PHONECARD_ENTRY_COUNT)
+            {
+                PlaySE(SE_SELECT);
+                ShowPhoneCardMessage(sPhoneCardMessages[idx]);
+            }
+        }
+    }
+}

@@ -35,7 +35,13 @@ PM
 [BUFFER3] [BUFFER1]:[BUFFER2] 
 
 #org @gText_NPCName1
-Reddish
+Mom
+#org @gText_NPCName2
+Professor Oak
 
-#org @gText_NPCName2 
-CarryMinato
+#org @gText_NPCMsg1
+Remember to save your game often!
+
+#org @gText_NPCMsg2
+Come see me if you find anything strange.
+

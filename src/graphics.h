@@ -8,6 +8,8 @@ enum GfxTags
   GFXTAG_MAPCARD,
   GFXTAG_PHONECARD,
   GFXTAG_SCROLLBAR,
+  GFXTAG_ARROW_UP,
+  GFXTAG_ARROW_DOWN,
 };
 
 
@@ -37,6 +39,16 @@ extern const u16 phonecardPal[];
 extern const u8 PhoneCardBgTiles[]; 
 extern const u16 PhoneCardBgPal[]; 
 extern const u8 PhoneCardBgMap[];
+// arrow_up
+extern const u8 arrow_upTiles[];
+extern const u16 arrow_upPal[];
+#define GFXTAG_ARROW_UP 0x7F10
+
+// arrow_down
+extern const u8 arrow_downTiles[];
+extern const u16 arrow_downPal[];
+#define GFXTAG_ARROW_DOWN 0x7F11
+
 
 
 //================================================================================================
@@ -175,3 +187,40 @@ static const struct SpriteTemplate ScrollBarSpriteTemplate =
 	.affineAnims = gDummySpriteAffineAnimTable,
 	.callback = ScrollBarCallback,
 };
+static const struct OamData sArrowOam =
+{
+    .shape = SPRITE_SHAPE(8x8),
+    .size = SPRITE_SIZE(8x8),
+    .priority = 0,
+};
+
+static const union AnimCmd sAnim_ArrowStill[] = {
+    ANIMCMD_FRAME(0, 0),
+    ANIMCMD_END
+};
+
+static const union AnimCmd *const sAnimTable_Arrow[] = {
+    sAnim_ArrowStill,
+};
+static const struct SpriteTemplate sSpriteTemplate_ArrowUp =
+{
+    .tileTag = GFXTAG_ARROW_UP,
+    .paletteTag = GFXTAG_ARROW_UP,
+    .oam = &sArrowOam,
+    .anims = sAnimTable_Arrow,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCallbackDummy,
+};
+
+static const struct SpriteTemplate sSpriteTemplate_ArrowDown =
+{
+    .tileTag = GFXTAG_ARROW_DOWN,
+    .paletteTag = GFXTAG_ARROW_DOWN,
+    .oam = &sArrowOam,
+    .anims = sAnimTable_Arrow,
+    .images = NULL,
+    .affineAnims = gDummySpriteAffineAnimTable,
+    .callback = SpriteCallbackDummy,
+};
+
